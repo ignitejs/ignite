@@ -1,0 +1,313 @@
+#!/usr/bin/env node 
+
+// Helper application for ignite.js
+
+var util = require('util'),
+    path = require('path'),
+    ignite = require("../ignite"),
+    _ = require('underscore');
+
+var modes, runList ;
+
+function loadModes () {
+  var submods = require('../lib/utils/submods'), imodes, moddir
+  
+  imodes = new submods.SubMods(module, "ignite_modes") ;
+  return imodes.loadAllIntoObj() ;
+}
+
+function cmdLineHandling (cmdLineArgs) {
+  var topOpts ;
+  var runlist = [], optstack = [], opts = { modelist: [] }, possibleOpts ;
+  var usage, usageopt, ifset, parsecmdline ;
+  
+  // ignite options - note: the modes can also define their own options
+  topOpts = {
+      modes: {
+        short: "-m",
+        long: "--mode[s]",
+        type: "list",
+        desc: "Comma separated list of the modes to use",
+        examples: ["-m run", "-m lint,graph", 
+                   "--mode graph", "--modes lint,graph,run"],
+        match: ["--mode", "--modes"],
+        action: function (optname, opt) {
+          if (opts.modelist && opts.modelist.length) {
+            _.each(opts.modelist, function (mode) {
+              runlist.push({ mode: mode, opts: opts}) ;
+            }) ;
+            opts = optstack.pop() ;
+          }
+          optstack.push(opts) ;
+          opts = _.clone(opts) ;
+          opts.modelist = opt ;
+          return true ;
+        }
+      },
+      quiet: {
+        short: "-q",
+        long: "--quiet",
+        desc: "Make command much quieter (i.e. don't print results)"
+      },
+      file: {
+        type: "string",
+        short: "-f <filename>",
+        long: "--file <filename>",
+        desc: "Read commands from the specified file instead of the command line."
+      },
+      help: {
+        short: "-h",
+        long: "--help",
+        desc: "Display usage message",
+        match: ["-?"],
+        action: function () {
+          console.log(usage()) ;
+          process.exit(0) ;
+        }
+      },
+      help: {
+        short: "-v",
+        long: "--version",
+        desc: "Show ignite.js version number",
+        action: function () {
+          var fs = require('fs') ;
+          var pkg = JSON.parse(fs.readFileSync(path.join(path.dirname(module.filename), '../package.json'), 'utf8')) ;
+          console.log(pkg.version) ;
+          process.exit(0) ;
+        }
+      }
+  };
+  
+  ifset = function (val, suffix) {
+    suffix = suffix || "" ;
+    if (val && val !== undefined) {
+      return val+suffix ;
+    }
+    return "" ;
+  }
+  
+  usageopt = function (indent, title, opts) {
+    var utext = "";
+    
+    if (_.isEmpty(opts)) {
+      return "" ;
+    }
+    
+    if (title && title !== "") {
+      utext += indent+title+"\n" ;
+    }
+    _.each(opts, function (opt, optname) {
+      utext += indent+indent+ifset(opt.short, ", ")+ifset(opt.long)+":\n" ;
+      if (opt.desc) {
+        if (_.isArray(opt.desc)) {
+          _.each(opt.desc, function (line) {
+            utext += indent+indent+indent+line+"\n" ;
+          }) ;
+        } else { 
+          utext += indent+indent+indent+opt.desc+"\n" ;
+        }
+      }
+    }) ;
+    return utext ;
+  } ;  
+  
+  usage = function () {
+    var utext ;
+    
+    utext =  "Usage: ignite [opts] <SM File> [Arguments]\n" ;
+    utext += "       ignite [opts] -m mode1,mode2 [opts] <SM File> [Arguments]\n" ;
+    utext += "       ignite [opts] -m mode1 [mode1_opts] -m mode2 [mode2_opts] <SM File> [Arguments]\n\n" ;
+    utext += usageopt("  ", "Options:", topOpts) ;
+    _.each(modes, function (mode, modename) {
+      utext += "\n  Mode: "+modename+"\n" ;
+      utext += usageopt("  ", "", mode.opts) ;
+    }) ;
+    
+    return utext ;
+  } ;
+  
+  var pos = 0 ;
+  parseChunk = function (possOpts, inargs) {
+    var possOptObj, curopt, curoptname, inc ;
+    
+    possOptObj = _.reduce(possOpts, function (memo, opt, optname) {
+      if (opt.short) {
+        memo[opt.short] = optname ;
+      }
+      if (opt.long) {
+        memo[opt.long] = optname ;
+      }
+      _.each(opt.match, function (match) {
+        memo[match] = optname ;
+      }) ;
+      return memo ;
+    }, {}) ;
+    // First parse top-level options:
+    while (pos < inargs.length) {
+      if (inargs[pos].charAt(0) !== '-') {
+        // First non-option - escape
+        break ;
+      }
+      inc = 1 ;
+      curoptname = possOptObj[inargs[pos]] ;
+      if (!curoptname) {
+        console.log(usage()) ;
+        process.exit(0) ;
+      }
+      curopt = possOpts[curoptname] ;
+      if (!curopt.type || curopt.type === "boolean") {
+        opts[curoptname] = true ;
+      } else if (curopt.type === "string") {
+        opts[curoptname] = inargs[pos+1] ;
+        inc = 2 ;
+      } else if (curopt.type === "int") { 
+        opts[curoptname] = parseInt(inargs[pos+1]) ;
+        inc = 2;
+      } else if (curopt.type === "list") {
+        opts[curoptname] = inargs[pos+1].split(',') ;
+        inc = 2;
+      }
+      
+      pos += inc ;
+      
+      if (curopt.action) {
+        if (curopt.action(curoptname, opts[curoptname])) {
+          break ;
+        }
+      }
+    }
+    
+    return (pos < inargs.length && inargs[pos].charAt(0) === '-') ;
+  } ;
+  
+  // Test if there is a -m or --mode argument
+  if (!(_.detect(cmdLineArgs, function (arg) { return arg === "-m" || arg.slice(0,6) === "--mode" }))) {
+    _.extend(topOpts, modes.run.opts) ;
+  }
+  
+  do {
+    possibleOpts = _.clone(topOpts) ;
+    _.each(opts.modelist, function (modename) {
+      if (!modes[modename]) {
+        process.stderr.write("Unknown mode: "+modename+"\n") ;
+        process.exit(1) ;
+      }
+      if (modes[modename].opts) {
+        possibleOpts = _.extend(possibleOpts, modes[modename].opts) ;
+      }
+    }) ;
+  } while (parseChunk(possibleOpts, cmdLineArgs)) ;
+  
+  if (pos >= cmdLineArgs.length) {
+    console.log(usage()) ;
+    process.exit(0) ;
+  }
+  
+  if (opts.modelist.length === 0) {
+    opts.modelist.push("run") ;
+  }
+  
+  _.each(opts.modelist, function (mode) {
+    runlist.push({ mode: mode, opts: opts}) ;
+  }) ;
+  
+  var jsm = cmdLineArgs[pos] ;
+  var jsmargs = cmdLineArgs.slice(pos+1) ;
+  _.each(runlist, function (runobj) {
+    runobj.jsm = jsm ;
+    runobj.args = _.clone(jsmargs) ;
+  }) ;
+  
+  return runlist ;
+}
+
+var utils = {
+    createFactory: function (jsmfile, jsmopts, jsmargs) {
+      var jsmmod, jsmfactopts={}, jsmfactimps={}, jsmfact ;
+      var jsmloc, jsmlocs, defs, loaderr ;
+      
+      jsmlocs = [jsmfile, path.join(process.cwd(), jsmfile)] ;
+                 
+      while (!jsmmod && jsmlocs.length && !loaderr) {
+        jsmloc = jsmlocs.shift() ;
+        try {
+          jsmmod = require(jsmloc) ;
+        } catch (err) {
+          loaderr = err ;
+          if (RegExp("^Cannot find module '"+jsmloc+"'").test(err.message)) {
+            loaderr = null ;
+          }
+        }
+      }
+      if (!jsmmod) {
+        if (loaderr) {
+          throw loaderr ;
+        } else {
+          throw new Error("Cannot find '"+jsmfile+"'") ;
+        }
+      }
+      
+      if (typeof jsmmod !== "function") {
+        if (jsmmod.stateMachines) {
+          jsmmod = jsmmod.stateMachines[0] ;
+        }
+      }
+      
+      if (jsmmod.defaults) {
+        defs = jsmmod.defaults ;
+        if (defs.args && jsmargs.length === 0) {
+          // Append args to argument array
+          _.each(defs.args, function (val) { jsmargs[jsmargs.length] = val ; }) ;
+        } 
+      }
+        
+      if (jsmopts.jsonargs) {
+        jsmargs = JSON.parse(jsmargs[0]) ;
+      }
+      
+      jsmfactopts = _.extend(jsmfactopts, {
+          strict: jsmopts.strict,
+          logLevel: (jsmopts.logLevel || 0),
+      }) ;
+
+      jsmfact = new ignite.Factory(jsmmod, jsmfactimps, jsmfactopts) ;
+      return jsmfact ;
+    }
+} ;
+
+cmdlineargs = process.argv.slice(2) ;
+modes = loadModes() ;
+runList = cmdLineHandling(cmdlineargs) ;
+
+var exitval = 0 ;
+_.each(runList, function (run) {
+  var stderr = process.stderr, stdout = process.stdout ; 
+  var donecb, desc = run.mode+": "+run.jsm, verbose = !run.opts.quiet ;
+  
+  if (!modes[run.mode]) {
+    process.stderr.write("Unknown mode: "+run.mode+"\n")
+    return ;
+  }
+  
+  donecb = function (err) {
+    if (err) {
+      if (verbose) {
+        stderr.write(desc+" Exited with error:\n");
+        if (err.message) {
+          stderr.write(err.message+"\n") ;
+        } else {
+          stderr.write(err.toString()+"\n") ;
+        }
+      }
+      
+      exitval |= 1
+      return ;
+    }
+    
+    if (verbose) {
+      stdout.write(desc+" Exited with no error.\n") ;
+    }
+  } ;
+  
+  modes[run.mode](utils, donecb, run.jsm, run.opts, run.args) ;
+}) ;

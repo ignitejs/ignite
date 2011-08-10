@@ -1,0 +1,411 @@
+<h1>JSMachine: An Introduction</h1>
+
+<h2>Background</h2>
+
+<p>JSMachine is a package that makes it easy to design, implement, debug, comment and draw
+UML2-alike state machines in JavaScript. It is designed to allow such machines to be
+described in fairly natural JavaScript and has some special tricks to help support
+writing node.js code.</p>
+
+<p>State machines have been around for decades, and are a standard design methodology,
+especially in embedded systems. They have a huge body of theory and practice behind
+them, but somehow they have failed to explicitly permeate through to be commonly used
+in JS, despite their ability to clearly layout asynchronous systems.</p>
+
+<p>Traditional state machines can feel somewhat restrictive for typical uses, and so
+we aim to support the extended capabilities of UML2 state machines. These include:</p>
+
+<ul>
+<li>State machine variables (aka Extended States)</li>
+<li>Guard conditions</li>
+<li>Entry and exit actions</li>
+<li>Internal (local) and external transitions</li>
+<li>Hierarchical states</li>
+<li>Event deferral</li>
+</ul>
+
+<p>In order to make life easy for JavaScript (and especially node.js) programmers, JSMachine
+has the following features:</p>
+
+<ul>
+<li>Different modes of usage - for debugging or for super-fast execution</li>
+<li>Use of standard</li>
+</ul>s, such as closures.</li>
+<li>Use of standard node.js patterns, including:
+<ul><li>standard async method signature</li>
+<li>use of EventEmitters</li></ul></li>
+<li>Support for the use of WebWorkers to off-load processing work to other threads</li>
+</ul>
+
+<p>We recommend that before proceeding you read Wikipedia's excellent page on UML state
+machines, in order to give you a bit of a background on what we're trying to produce. (And,
+hopefully you'll spot the reasons why JS and state machines really fit together well).</p>
+
+<h2>A Working Example</h2>
+
+<p>For the impatient amongst you, here is a simple, but fully working example to show
+what a state machine looks like. The hope is that it is quite self-explanatory, so take
+a look and see if you can work out what it does.</p>
+
+<p><em>* INSERT CODE *</em></p>
+
+<p>As you've probably worked out, this SM reads a file in, does some silly processing on it
+and then writes a file back out again. But there is actually quite a lot going on here, so
+lets take a closer look.</p>
+
+<p>We'll spend the majority of our time looking within the <code>sm_desc()</code> function, as it is
+here that the state machine is defined. So why do we use a function to define the
+state machine, well:</p>
+
+<ol>
+<li>You don't have to, it can be an object (see below), but you probably want it to be.</li>
+<li>But more importantly, it allows us to build a closure, so that the variables
+defined within the function, and its arguments, belong to the state machine
+and are accessible from its functions.</li>
+</ol>
+
+<p>You'll see in this function that we set a couple of things on the <code>this</code> object - the first
+is just a descriptive name for the machine, the second, the states object is where things
+start getting interesting.</p>
+
+<p>The three sub-objects Read, Process and Write are the main states of the machine (three
+other special states @entry, @exit and @error are automatically generated for you). Here's a
+few points which should help you work out what is happening:</p>
+
+<ul>
+<li><p>States can have 'entry' functions, which are called as the state is entered. These
+    usually either kick off an asynchronous call (which the state is waiting for), or
+    create an EventEmitter.</p></li>
+<li><p>By adding <code>fire.</code> to the front of an asynchronous calls the SM does a lot of work
+    for you - it creates a callback, which will automatically create either a <code>Done</code> or
+    an <code>Err</code> event tailored to the call made.</p></li>
+<li><p>Within the <code>actions</code> subobject of a state you can list the events handled by the
+    state. If these are set to a string, then that is the target state, if they are
+    a function then that function is called and should return the target state.</p></li>
+<li><p>The process state has a <code>work</code> function, which is synchronous. When it completes, it
+    returns an array, containing an event name and a number of arguments.</p></li>
+<li><p>Jumping to either of the special states <code>@exit</code> or <code>@error</code> causes the state
+    machine to complete.</p></li>
+</ul>
+
+<p>At the end of the sm_desc function it returns a string - this is the initial function
+that the state machine should enter on starting.</p>
+
+<p>Lower down, you'll see how we actually create a state machine and start it. First we create
+a factory for our particular state machine type. Then we can spawn a new instance of the
+state machine, which will happily run and then call the callback when it's complete.</p>
+
+<h3>Drawing it</h3>
+
+<p>Here comes the fun bit, as well as being a factory to spawn new machines, you can also ask
+for diagrams to be drawn - these are great for the 3 D's - designing, documenting and
+debugging.</p>
+
+<p>Drawing the diagram is easy just add:</p>
+
+<p><em>* INSERT CODE *</em></p>
+
+<p>And this is what you get. As you would expect there are a range of options for controlling
+the drawing.</p>
+
+<h3>Verifying</h3>
+
+<p>JSMachine can also help to make sure your machine is 'sensible', it analyses the code
+and makes sure you don't try and jump into any non-existent states, that you handle all
+the events you should and much more.</p>
+
+<p><em>* INSERT CODE *</em></p>
+
+<h3>Compiling</h3>
+
+<p>At this stage you might be worried that JSMachine will add a lot of overhead to your
+system. Well, it's actually quite lightweight - but, if you really after speed, you can
+ask JSMachine to compile an optimised static state machine for you, which will fly along.</p>
+
+<p><em>* INSERT CODE *</em></p>
+
+<h2>Writing a Machine</h2>
+
+<h3>The Bare Essentials</h3>
+
+<p>A state machine is typically described within a closure function, which, a bit like
+a constructor, assigns values to the <code>this</code> object. The only thing that needs to be
+assigned is the <code>states</code> object, which, fairly obviously, describes the states.</p>
+
+<p>The minimum required in each state is either an <code>entry</code> or <code>work</code> function and an
+<code>events</code> object. <code>entry</code> functions are typically used to start something asynchronous -
+typically an asynchronous call or an EventEmitter, but they can also be used to 
+initialise variables or allocate resources required in the state. <code>work</code> functions
+should be synchronous and represent processing work which is done in the state.</p>
+
+<p>The closure function should return the initial state of the machine.</p>
+
+<h3>Plumbing</h3>
+
+<p>Along with the states, obviously one of the fundamental aspects of a state machine is
+the plumbing which controls how the machine transitions between states and what actions
+are taken on receiving events. These are defined within the states, within action objects
+and guard functions.</p>
+
+<h4>Action objects</h4>
+
+<p>The keys within an action object acts as a lookup to control what happens when an 
+event is received into a state. If the key's value is a string, then this specifies
+that the action is a simple state transition to another state. If it is a function,
+then that function is called - it can do some work (for example call <code>write()</code> on
+a WriteStream object), but should not initiate any asynchronous calls. The return value
+of the function indicates which state to transition to. If the return value is null
+(or there is no return), then the SM stays in it's state, without leaving it (i.e.
+it does an internal transition).</p>
+
+<h4>Guard functions</h4>
+
+<p>Sometimes you need to ensure that a state is only entered if some condition is
+satisfied. This can be done with a guard function. If a state has a guard, then this
+function is called <strong>before</strong> the state is entered. If it returns a null value, then
+the machine does go on and enter the state, if not, then the guard should return the
+name of another state to divert to. </p>
+
+<h3>Exit Functions</h3>
+
+<p>If a state has an <code>entry</code> function, then it can also have an <code>exit</code> function. These
+can be useful to tidy up after a state, for example releasing resources.</p>
+
+<h2>Using a Machine</h2>
+
+<h2>Event Sources</h2>
+
+<h3>'Fired' calls</h3>
+
+<p>node.js has a standard signature for the majority of its asynchronous calls:
+-   Calls take a callback as the last argument.
+-   Callbacks have an error variable as their first argument.</p>
+
+<p>As this is so common, JSMachine has a handy shortcut for using such calls. This uses
+the 'fire' object which is passed as the first argument to the state machine description
+function. This object acts as a proxy to the objects passed into the JSMachine constructor
+(in the second argument, <code>imports</code>). Therefore, if imports is set up as:</p>
+
+<pre><code>    imports = { fs: require('fs') } ;
+</code></pre>
+
+<p>then, from within our entry function we can call:</p>
+
+<pre><code>    fire.fs.readFile(filepath) ;
+</code></pre>
+
+<p>This will call a curried version of <code>fs.readFile()</code>, with an auto-generated callback
+that automatically checks the callback arguments and causes an <code>readFileDone</code> event
+to be injected if there was no error, and a <code>readFileErr</code> event if there was a problem.
+The callback also automatically assigns the arguments to the event (removing the first
+one if there is not error).</p>
+
+<h3>Event emitters</h3>
+
+<p>The other main source of events in node.js are EventEmitters. These are easily handled
+within JSMachine by having a simple register/unregister mechanism.</p>
+
+<p>EventEmitters are registered with a special helper function available also available
+on the fire object (these are marked with a <code>$</code>). This is <code>fire.$eventEmitter()</code>, this
+takes a string name for the emitter, the emitter itself, and an optional third argument
+which dictates whether it is a short-term or long-term emitter.</p>
+
+<pre><code>    // Example entry function, showing EventEmitter registration
+    "entry": function () {
+      // Create a read stream event emitter
+      readstream = fs.createReadStream(fpath) ;
+      // Register it with the state machine (short term)
+      fire.$eventEmitter("rs", readstream) ;
+    }
+</code></pre>
+
+<p>or</p>
+
+<pre><code>    // Example entry function, showing long-term EventEmitter registration
+    "entry": function (options) {
+      // Create an http request event emitter
+      req = http.request(options) ;
+      // Register it (long term)
+      fire.$eventEmitter("req", req, true) ;
+      ...          
+    }
+</code></pre>
+
+<p>The string name for the emitter is used to prepend any events emitted from it for the
+purposes of the state machine (and hence to differentiate between multiple similar
+emitters, if they are present).</p>
+
+<pre><code>  // Example state that uses a ReadStream
+  "WriteFromStream": {
+    "entry": function () {
+      readstream = fs.createReadStream(fpath) ;
+      fire.$eventEmitter("rs", readstream) ;
+    },
+    "exit": function () {
+      readstream.destroy() ;
+    },
+    "actions": {
+        "rs.data": function (data) {
+          // do something, for example
+          req.write(data) ;
+          // no return, so internal transition
+        },
+        "rs.end":       "Wait4Server",
+        "rs.error":     "AbortReq"
+    }
+  }
+</code></pre>
+
+<p>If <code>fire.$eventEmitter()</code> has no third argument, or that argument is a <code>false</code> value,
+then JSMachine assumes that the EventEmitter is short lived and is only relevant for
+its state, i.e. it is automatically unregistered when the state is left. If it is <code>true</code>
+then the emitter has to be unregistered later using <code>fire.$unregEventEmitter()</code>.</p>
+
+<pre><code>    "entry": function (res) {
+      // Unregister previously registered EventEmitter
+      fire.$unregEventEmitter("req") ;
+    }
+</code></pre>
+
+<p>See example: httpClient.js</p>
+
+<h3>Auto-generated callbacks</h3>
+
+<p>There are some places where you need a callback function to communicate with the
+state machine, a simple, but common, requirement is for the callback to simply cause
+an event to be fired (and for the arguments of the callback to be automatically assigned
+to the event).</p>
+
+<p>Such a callback can be easily generated with <code>fire.$cb()</code>, just pass the string name
+of the event you would like to generate and it will do the rest. For example:</p>
+
+<pre><code>    "entry": function () {
+      timerId = setInterval(fire.$cb("tick"), 200) ;
+    }
+</code></pre>
+
+<p>will generate a tick event every 200 ms. See example: timer.js</p>
+
+<h3>Timeouts and tickers</h3>
+
+<p>It is fairly common practice, usually to act as a timeout, to require
+an event after a particular period. This is easily achieved by adding
+a timeout attribute to a state, which will cause an event called 'timeout'
+to occur after the set number of milliseconds.</p>
+
+<pre><code>    "State": {
+        "entry": ...
+        "timeout": 10000, // timeout after 10s
+        "actions": {
+            "timeout": ...
+            ...
+        }
+    }
+</code></pre>
+
+<p>If the state is left before the timeout fires, then it is automatically
+cancelled.</p>
+
+<p>A state can also specify a 'ticker' which will cause a 'tick' event to be
+repeated fired, with a certain interval, whilst the machine stays in the state.</p>
+
+<pre><code>    "State": {
+        "entry": ...
+        "ticker": 100, // tick every 0.1s
+        "actions": {
+            "tick": ...
+            ...
+        }
+    }
+</code></pre>
+
+<h3>Roll your own</h3>
+
+<p>If all else fails, you can still write your own callback and use some of the low-level
+methods on the state machine (such as <code>inject()</code>, which inserts an event). However,
+we hope you don't have to do that, it will break quite a bit, including the diagram
+drawing.</p>
+
+<h2>Pretty Pictures</h2>
+
+<h2>Multi-levels</h2>
+
+<h3>State internal machines</h3>
+
+<p>UML2 allows states to be hierarchical - so that the action within a state is actually
+controlled by another machine, and that state will not exit until the sub-machine exits.</p>
+
+<p>A sub-machine is started by specifying an 'sm' object in the state. If this exits via the
+<code>@exit</code> state then an <code>exit</code> event occurs in the upper state, if it is by the <code>@error</code>
+state then it is an <code>error</code> event.</p>
+
+<pre><code>"IntState": {
+    "sm": function (fire, arg0) {
+        this.states = {
+            ...
+        } ;
+    },
+    "actions" {
+        "exit": "NextState",
+        "error": "@error"
+    }
+}
+</code></pre>
+
+<p>A sub-machine can cause other states to occur at the parent with <code>fire.$parentevt()</code> which
+takes the event's name and any number of arguments.</p>
+
+<pre><code> fire.$parentevt("evtname", arg0, arg1) ;
+</code></pre>
+
+<h3>Spawning new machines</h3>
+
+<p>Another common use case, is the need to start an associated state machine. The typical
+example of this is web server, which has a top-level state machine receiving the
+initial connections from clients, this then needs to start new machines to handle
+each request. There could, therefore, be many request SMs, but only one server SMs.
+There is still an association between the server SM and the request SMs, as for example
+you may not want the server SM to enter certain states if requests are outstanding.</p>
+
+<pre><code>"SpawnState": {
+    "spawn": function (fire, arg0) {
+        this.states = {
+            ...
+        } ;
+    }
+}
+</code></pre>
+
+<p>A state machine can register the special internal <code>spawnmgr</code> Event Emitter.</p>
+
+<pre><code>"Init" {
+    "entry": function () {
+        fire.$regSpawnMgr("spawnmgr") ;
+     }
+}
+</code></pre>
+
+<p>This can cause the following events to occur:</p>
+
+<ul>
+<li><strong>new</strong> when a new SM is spawned</li>
+<li><strong>exit</strong> when a SM has exited with no error (via <code>@exit</code>)</li>
+<li><strong>error</strong> when a SM has exited with an error (via <code>@error</code>)</li>
+<li><strong>quiet</strong> when all spawned SMs have exited</li>
+<li><strong>threshold</strong> when a threshold value is crossed (set up with 
+    <code>spawnmgr.setThreshold()</code>) - which is useful for throttling.</li>
+</ul>
+
+<h2>Fully Specifying</h2>
+
+<p>TODO:
+-   Describe "ignore", "error" and "defer" event lists
+-   Describe default action specification</p>
+
+<h2>Heavy lifting</h2>
+
+<p>TODO:
+-   Describe off-loading work to webworkers (change "work" function to
+        "webwork")</p>
+
+<h2>Advanced Usage</h2>

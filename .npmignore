@@ -1,0 +1,9 @@
+test/
+tmp/
+lib-cov/
+examples/
+node_modules/
+.settings/
+.project
+.svn/
+.externalToolBuilders/

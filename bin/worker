@@ -1,0 +1,191 @@
+#!/usr/bin/env node 
+
+var ignite = require('../ignite'),
+    workerUtils = require('../lib/plugins/utils/worker'),
+    util = require('util'),
+    path = require('path'),
+    _ = require('underscore'),
+    _s = require('underscore.string'),
+    vm = require('vm'),
+    net = require('net');
+
+var verbose = false ;
+var stderr = process.stderr ;
+
+function worker (fire, inStream, outStream) {
+  var fnCache = {}, objCache = {}, inBuffer="" ;
+  
+  return {
+    startState: "Init",
+    states: {
+      Init: 
+      {
+        entry: function () {
+          return "Wait" ;
+        }
+      },
+
+      // Core waiting state
+      Wait: 
+      {
+        sub: workerUtils.RxMachine,
+        args: function () {
+          return [inStream, inBuffer] ;
+        },
+        actions: {
+          "sub.exit": function (cmdStr, remains) {
+            if (cmdStr === null) {
+              return "@exit" ;
+            }
+            var cmd = JSON.parse(cmdStr) ;
+            inBuffer = remains ;
+            return ["ParseCommand", cmd] ;
+          },
+          "sub.error": "@exit"
+        }
+      },
+      
+      ParseCommand:
+      {
+        entry: function (cmd) {
+          if (!cmd.id) {
+            return ["@error", "No command id"] ;
+          }
+          fire.$inject("cmd."+cmd.id) ;
+        },
+        actions: {
+          "cmd.nop": "Wait",
+          "cmd.regfn": "RegisterFn",
+          "cmd.runfn": "RunFn",
+          "cmd.": ["@error", "Unknown command id"]
+        }
+      },
+      
+      RegisterFn:
+      {
+        entry: function (cmd) {
+          var sandbox, exception = null, script ;
+          
+          try {
+            if (! cmd.fnId) {
+              throw new Error("No function id") ;
+            }
+            if (! cmd.fnString ) {
+              throw new Error("No function string.") ;
+            }
+          
+            sandbox = cmd.sandbox || {} ;
+            if (cmd.require) {
+              _.each(cmd.require, function (modname) {
+                sandbox[modname] = require(modname) ;
+              }) ;
+            }
+            sandbox.jsm_worker = {} ;
+            script = "jsm_worker.fn = " + cmd.fnString + " ;\n" ;
+          
+            vm.runInNewContext(script, sandbox, cmd.fnId) ;
+            
+            fnCache[cmd.fnId] = sandbox.jsm_worker.fn ;
+          } catch (err) {
+            stderr.write("Reg: "+err+"\n"+err.stack.toString()+"\n") ;
+            exception = err ;
+          } finally {
+            return ["Reply", cmd, exception, null] ;
+          }
+        }
+      },
+      
+      RunFn:
+      {
+        entry: function (cmd) {
+          var exception = null, result = null, context ;
+          try {
+            if (!(cmd.fnId && fnCache[cmd.fnId])) {
+              throw new Error("RunFn: No function id.") ;
+            }
+            if (!cmd.args) {
+              throw new Error("RunFn: No function arguments.") ;
+            }
+            context = cmd.context || null ;
+            
+            result = fnCache[cmd.fnId].apply(context, cmd.args) ;
+          } catch (err) {
+            stderr.write("Run: "+err+"\n"+err.stack.toString()+"\n") ;
+            exception = err ;
+          } finally {
+            return ["Reply", cmd, exception, result] ;
+          }
+        }
+      },
+      
+      Reply:
+      {
+        entry: function (cmd, exception, result) {
+          var reply ;
+          if (verbose && exception) {
+            stderr.write(process.pid+": "+exception.toString()) ;
+          }
+          reply = {
+              id: cmd.id,
+              ok: !exception
+          } ;
+          if (reply.ok) {
+            reply.result = result ;
+          } else {
+            reply.exception = exception ;
+          }
+          
+          return ["Tx", outStream, reply] ;
+        }
+      },
+      
+      Tx:  
+      {
+        sub: workerUtils.TxMachine,
+        actions: {
+          "sub.exit":  "Wait",
+          "sub.error": "@error"
+        }
+      }
+    }
+  } ;
+}
+
+var args = process.argv.slice(2) ;
+
+if (!module.parent || path.basename(module.parent.filename) !== "ignite") {
+  if (args.length !== 1) {
+      process.stderr.write("This program should not be run directly, but launched automatically as a\nsubprocess by a plugin.\n") ;
+      process.exit(0) ;
+  }
+  
+  var unixSktPath = args[0], inStrm, outStrm ;
+  
+  function startWorker (inStream, outStream) {
+    var factory = new ignite.Factory(worker, {}, {logLevel: 0}) ;
+//    process.stderr.write("Starting.\n") ;
+    factory.spawnWithCb(inStream, outStream, function (err) {
+//      process.stderr.write("Exiting.\n") ;
+    }) ;
+  }
+  
+  if (unixSktPath === "-") {
+    inStrm = process.stdin ;
+    outStrm = process.stdout ;
+    
+    startWorker(inStrm, outStrm) ;
+  } else {
+    inStrm = net.createConnection(unixSktPath) ;
+    inStrm.pause() ;
+    inStrm.on("connect", function () {
+      startWorker(inStrm, inStrm) ;
+    }) ;
+    inStrm.on("data", function (d) {
+  //    process.stderr.write("worker in >"+d+"<\n") ;
+    });
+  }
+} else {
+  module.exports = worker ;
+}
+
+

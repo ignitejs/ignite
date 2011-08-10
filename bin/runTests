@@ -1,0 +1,204 @@
+#!/usr/bin/env node 
+var ignite = require('../ignite'),
+    child_process = require('child_process'),
+    path = require('path'),
+    util = require('util'),
+    _ = require('underscore'),
+    _s = require('underscore.string') ;
+
+var expressoArgs = [] ;
+var expressoEnv = _.clone(process.env) ;
+var expressoOptions = { 
+    cwd: undefined,
+    env: expressoEnv,
+    customFds: [-1, -1, -1],
+    setsid: false
+  } ;
+
+var expressoPaths = ['node_modules/.bin/expresso', '/usr/local/bin/expresso', '/usr/bin/expresso'] ;
+
+var expressoPath = _.detect(expressoPaths, function (epath) {
+  return path.existsSync(epath) ;
+}) ;
+
+if (!expressoPath) {
+  process.stderr.write("Cannot find expresso executable. Tried: "+util.inspect(expressoPaths)+"\n") ;
+  process.exit(1) ;
+}
+process.stdout.write("Expresso path: "+expressoPath+"\n");
+
+function procDir (fire, dir) {
+  var entityList = [], testList = [];
+  
+  return {
+    startState: "ReadDir",
+    states: {
+      ReadDir: {
+        async: "fs.readdir",
+        actions: {
+          ".done": "StatEntity",
+          ".err": function (err, args) {
+            fire.$factoryEvent('fsErr', err, args[0]) ;
+            return "@exit" ;
+          }
+        },
+        exit: function (list) { entityList = list ; }
+      },
+      StatEntity: {
+        guard: function () {
+          return entityList.length ? null : "Expresso" ;
+        },
+        async: {
+          fn: "fs.stat",
+          fnArgs: function () {
+            return [path.join(dir, entityList.shift())] ;
+          }
+        },
+        actions: {
+          "async": function (err, stat, args) {
+            var fname ;
+            if (!err) {
+              fname = args[0] ;
+              if (stat.isFile()) {
+                if (fname.match(/\.js$/)) {
+                  testList.push(fname) ;
+                }
+              }
+              if (stat.isDirectory()) {
+                if (path.basename(fname)[0] !== ".") {
+                  fire.$factoryEvent('addDir', fname) ;
+                }
+              }
+            } else {
+              fire.$factoryEvent('fsErr', err, stat[0]) ;
+            }              
+            return "@self" ;
+          }
+        }
+      },
+      Expresso: function () {
+        var output ;
+        return {
+          guard: function () {
+            output = "" ;
+            return testList.length ? null : "@exit" ;
+          },
+          entry: function () {
+            var child ;
+            process.stdout.write("Running test suite: "+dir+"\n") ;
+            child = child_process.spawn(expressoPath,
+                expressoArgs.concat(testList), expressoOptions) ;
+            child.stdout.setEncoding('utf8');
+            child.stderr.setEncoding('utf8');
+            fire.$regEmitter("child", child) ;
+            fire.$regEmitter("child.stdout", child.stdout) ;
+            fire.$regEmitter("child.stderr", child.stderr) ;
+          },
+          actions: {
+            "child.exit": function (val) {
+              if (val === 0) {
+                fire.$factoryEvent("addPass", dir) ;
+              } else {
+                fire.$factoryEvent("addFail", dir) ;
+              }
+              return "@exit" ;
+            },
+            "child.stdout.close": "@ignore",
+            "child.stdout.data": function (data) {
+              process.stdout.write(data) ;
+            },
+            "child.stderr.close": "@ignore",
+            "child.stderr.data": function (data) {
+              process.stderr.write(data) ;
+            }
+          }
+        } ;
+      }
+    }
+  };
+}
+
+function runTests (fire, topdir) {
+  var procDirFactory, dirList = [], passList = [], failList = [] ;
+
+  return {
+    startState: "Init",
+    states: {
+      Init: {
+        entry: function () {
+          if (typeof regexp === "string") {
+            regexp = new RegExp(regexp) ;
+          }
+          
+          dirList.push(topdir) ;
+          
+          return "ManageProcessors" ;
+        }
+      },
+      ManageProcessors: {
+        entry: function () {
+          procDirFactory = new ignite.Factory(procDir, this.jsmFactory.imports, this.jsmFactory.options) ;
+          fire.$regEmitter("procDir", procDirFactory) ;
+          procDirFactory.setThreshold.lessthan(1) ;
+        },
+        actions: {
+          "procDir.threshold": function () {
+            var dir ;
+            if (dirList.length) {
+              dir = dirList.shift() ;
+              procDirFactory.spawn(dir) ;
+            }
+          },
+          "procDir.addDir": function (dir) {
+            dirList.push(dir) ;
+          },
+          "procDir.fsErr": function (err, fpath) {
+            var errText = err.toString() ;
+            if (!errText.match(fpath)) {
+              errText += " '"+fpath+"'" ;
+            }
+            console.log(errText) ;
+          },
+          "procDir.quiet": function () {
+            return ["@exit", failList, passList] ;
+          },
+          "procDir.addPass": function (dir) { passList.push(dir) ; },
+          "procDir.addFail": function (dir) { failList.push(dir) ; },
+        }
+      }
+    }
+  } ;
+}
+
+var testDir, arg, args = process.argv.slice(2) ;
+
+while (args.length) {
+  arg = args.shift() ;
+  switch (arg) {
+  case '-h': 
+  case '--help':
+    print("usage: runTests [-l <log_level>] [test_directory]\n") ;
+    process.exit(0) ;
+  case '-l':
+  case '--loglevel':
+    expressoEnv.IGNITE_TEST_LOGLEVEL=args.shift() ;
+    break ;
+  default:
+    testDir = arg ;
+    break ;
+  }
+}
+if (!testDir) {
+  testDir = "test" ;
+}
+
+var factory = new ignite.Factory(runTests, { fs: require('fs') }, {logLevel: 0}) ;
+factory.spawnWithCb(testDir, function (err, failList, passList) {
+  var greenStart = '\x1B[32m', redStart = '\x1B[31m', colEnd = '\x1B[0m';
+  _.each(passList, function (d) {
+    process.stdout.write(greenStart+d+ " passed.\n"+colEnd) ;
+  }) ;
+  _.each(failList, function (d) {
+    process.stdout.write(redStart+d+ " failed.\n"+colEnd) ;
+  }) ;
+}) ;

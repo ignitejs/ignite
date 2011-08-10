@@ -1,0 +1,9 @@
+{
+"node": true,
+"boss": true,
+"curly": true,
+"eqeqeq": true,
+"eqnull": true,
+"newcap": true,
+"undef": true
+}

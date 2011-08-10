@@ -1,0 +1,63 @@
+{
+    "name": "ignite",
+    "main": "ignite.js",
+    "version": "0.1.0",
+    "description": "A simple asynchronous programming framework inspired by UML2 state machines.",
+    "homepage": "http://ignitejs.com/",
+    "keywords": [
+        "ignite",
+        "async",
+        "framework",
+        "state machine",
+        "FSM",
+        "UML"
+    ],
+    "contributors": [ "David Hammond", "Richard Miller-Smith" ],
+    "licenses": [
+        {
+            "type": "BSD3",
+            "url": "http://www.opensource.org/licenses/BSD-3-Clause"
+        }
+    ],
+    "bugs": {
+        "web": "http://github.com/samshull/node-proxy/issues"
+    },
+    "engines": {
+        "node": ">=0.4.0"
+    },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "http://github.com/samshull/node-proxy"
+        }
+    ],
+    "main": "index.js",
+    "bin": {
+        "ignite": "./bin/ignite"
+    },
+    "scripts": {
+        "test": "./bin/runTests"
+    },
+    "dependencies": {
+        "node-proxy": "",
+        "uglify-js": "",
+        "underscore": "",
+        "underscore.string": ""
+    },
+    "devDependencies": {
+        "expresso": "~0.8.1",
+        "should": "~0.2.1",
+        "jquery": "",
+        "jshint": "",
+        "request": "",
+        "socket.io": "",
+        "socket.io-client": "",
+        "xml2js": ""
+    },
+    "directories": { 
+        "doc": "./doc",
+        "examples": "./examples",
+        "lib": "./lib",
+        "bin": "./bin"
+    }
+}

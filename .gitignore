@@ -1,0 +1,7 @@
+node_modules/*
+tmp/*
+lib-cov
+.settings
+.svn
+.externalToolBuilders
+todo.md

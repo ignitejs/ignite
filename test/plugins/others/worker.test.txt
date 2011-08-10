@@ -1,0 +1,12 @@
+WRK$00000d
+{"id":"nop"}
+WRK$00004b
+{"id":"regfn","fnId":"1","fnString":"function () {return 'Hello World';}"}
+WRK$000024
+{"id":"runfn","fnId":"1","args":[]}
+WRK$000073
+{"id":"regfn","fnId":"2","fnString":"function (file) {return fs.readFileSync(file).toString();}","require":["fs"]}
+WRK$00002e
+{"id":"runfn","fnId":"2","args":["index.js"]}
+WRK$000024
+{"id":"runfn","fnId":"3","args":[]}
