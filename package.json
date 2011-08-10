@@ -20,7 +20,7 @@
         }
     ],
     "bugs": {
-        "web": "http://github.com/samshull/node-proxy/issues"
+        "web": "http://github.com/ignitejs/ignite/issues"
     },
     "engines": {
         "node": ">=0.4.0"
@@ -28,7 +28,7 @@
     "repositories": [
         {
             "type": "git",
-            "url": "http://github.com/samshull/node-proxy"
+            "url": "http://github.com/ignitejs/ignite"
         }
     ],
     "main": "index.js",
