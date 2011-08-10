@@ -2,7 +2,7 @@
     "name": "ignite",
     "main": "ignite.js",
     "version": "0.1.0",
-    "description": "A simple asynchronous programming framework inspired by UML2 state machines.",
+    "description": "A simple async programming framework inspired by UML2 state machines.",
     "homepage": "http://ignitejs.com/",
     "keywords": [
         "ignite",

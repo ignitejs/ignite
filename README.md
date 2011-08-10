@@ -25,4 +25,6 @@ the design, implementation and deployment stages.
 
 The full documentation is available [here](http://ignitejs.com/).
 
+### Examples
 
+There are a number of examples in the source tree, which are described [here](http://ignitejs.com/examples/)
