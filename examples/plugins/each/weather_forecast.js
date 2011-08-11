@@ -46,7 +46,7 @@
 // made in parallel to no more than 6.
 //
 // Example Output:
-// $ ignite examples/plugins/each/weather_yahooapis.js
+// $ ./bin/ignite examples/plugins/each/weather_yahooapis.js
 // Running examples/plugins/each/weather_forecast.js
 // London, United Kingdom: 18C Partly Cloudy
 // Paris, France: 20C Mostly Cloudy
