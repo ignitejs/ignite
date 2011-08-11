@@ -28,30 +28,28 @@
 //]
 
 //
-// This example finds all the files in a specified directory, 
-// opens each and then counts the number of lines of text contained. 
-// The example is contrived to use two state machines (defined with 
-// [SMGFs][SMGFAPI] `countLines` and `counter`) to illustrate how the 
-// [spawn][SPAWN] Plug-In is used.
+// This example finds all files in a specified directory, opens each 
+// and counts the number of lines of text contained. The example is 
+// contrived to use two state machines, `countLines` and `counter`, 
+// to illustrate how the [spawn][SPAWN] plug-in is used.
 //
 // The `counter` state machine is responsible for counting the number 
 // of lines in a single file. Its `ReadFile` state uses an asynchronous 
 // guard function to check that the path it receives is a file path and 
-// in which case the file in read and its data passed to the 
-// `CountLines` state. This state uses the work Plug-In to perform the 
-// counting process asynchronously.
+// if so reads the files and passes its data to `CountLines`. This state 
+// uses the [work][WORK] plug-in to perform the counting process 
+// asynchronously.
 //
 // The `countLines` state machine has two states, `ReadDir` and `Spawn`. 
-// The `ReadDir` state reads the target directory and passes its contents 
-// in an array to the `Spawn` state. This state starts a new `counter` 
-// state machine to perform the line counting process on each file. 
-// Notice that it loops back on itself (line 60) until all elements of 
-// the array have been used. It then waits in the state until the 
-// `'CounterSpawner.quiet'` event is received, indicating that all the 
-// spawned `counter` state machine have completed.
+// `ReadDir` reads the target directory and passes its contents in an 
+// array to `Spawn`. This state starts a new `counter` state machine 
+// to perform the line counting process for each file. Notice that the 
+// state loops back on itself until the array is empty. It then waits 
+// until the `'CounterSpawner.quiet'` event is received, indicating 
+// that all spawned `counter` state machine have exited.
 //
 // Example Output:
-// $ ignite examples/plugins/spawner/count_lines.js
+// $ ./bin/ignite examples/plugins/spawner/count_lines.js
 // Running examples/plugins/spawn/count_lines.js
 // index.js has 8 lines
 // .project has 23 lines

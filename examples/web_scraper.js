@@ -41,7 +41,7 @@
 // [jquery](http://search.npmjs.org/#/jquery) library to parse the HTML 
 // page data. Information from the summary table found in the `#boxoffice` 
 // div tag is extracted and then stored in the `boxOffice` array. This 
-// information includes an href for a dedicated page for each of the 
+// information includes a URL to a dedicated page for each of the 
 // movies in the table.
 //
 // Finally the machine moves to the `MovieDetails` state. This state 
@@ -49,14 +49,11 @@
 // dedicated movie pages. Again, `jquery` is used to extract information 
 // (the `div.infobar` tag) from each returned page. When all pages have 
 // been scraped the machine exits, setting the `boxOffice` array as the 
-// transition argument.
-//
-// The default callback function defined in the [`defaults`][FD] object of the 
-// [SMGF][SMGFAPI] simply loops through the `boxOffice` array, printing its 
-// contents.
+// final [transition argument][TA], the contents of which are printed by
+// the callback function defined in the [`defaults`][FD] object.
 //
 // Example Output:
-// $ ignite examples/web_scraper.js
+// $ ./bin/ignite examples/web_scraper.js
 // Running examples/web_scraper.js
 // run: examples/web_scraper.js Exited with no error.
 // 1  Captain America: The First Avenger: $65.1M $65.1M

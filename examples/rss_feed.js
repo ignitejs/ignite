@@ -46,15 +46,15 @@
 // machine then emits an event called `'rssFeed'` containing the array.
 //
 // The last step in the loop is the `Regulate` state. This state is used 
-// to regulate the frequency of the loop. The [`timeout`][TIMEOUT] plug-in is 
-// used to produce an event called `'timeout'` after a specified number 
-// of ms (`refresh`). On receipt of the event, the machine transitions 
-// to `Read` for another loop. Note, the regulation produced by the 
-// `Regulate` state is crude and only guarantees that the time taken for 
-// each loop is greater than the time spent waiting.
+// to regulate the frequency of the loop. The [`timeout`][TIMEOUT] plug-in 
+// is used to produce an event called `'timeout'` after a specified number 
+// of milliseconds (`refresh`). On receipt of the event, the machine 
+// transitions to `Read` for another loop. Note, the regulation produced 
+// by the `Regulate` state is crude and only guarantees that the time taken 
+// for each loop is greater than the time spent waiting.
 //
 // Example Output:
-// $ ignite examples/rss_feed.js
+// $ ./bin/ignite examples/rss_feed.js
 // Running examples/rss_feed.js
 // 12:10:06: Second NATO helicopter crashes; Afghans protest over killings
 // 12:06:58: Washington convinces Saleh not to return to Yemen: report

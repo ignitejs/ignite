@@ -29,23 +29,23 @@
 
 //
 // This example contains a state machine called `removeComments` that 
-// demonstrates how to use the [work][WORK] Plug-In. The state machine reads 
-// a source file, removes any comments from the text and finally saves 
-// the amended text to a new file.
+// demonstrates how to use the [work][WORK] plug-in. The state machine 
+// reads a source file, removes any comments from the text and finally 
+// saves the amended text to a new file.
 //
 // The machine consists of three states, `Read`, `Process` and `Write`. 
-// The `Process` state uses the `work` plug-in to perform the regex replace 
-// work asynchronously.
+// The `Process` state uses the [work][WORK] plug-in to perform the 
+// regex replace work asynchronously.
 //
 // Example Output:
-// $ ignite examples/plugins/work/remove_comments.js 
+// $ ./bin/ignite examples/plugins/work/remove_comments.js 
 // Running examples/plugins/work/remove_comments.js
 // run: examples/plugins/work/remove_comments.js Exited with no error.
 // File saved to examples/plugins/work/remove_comments.js.nc
 // $ _
 //
 // Example Output:
-// $ ignite examples/plugins/work/remove_comments.js badfile.txt
+// $ ./bin/ignite examples/plugins/work/remove_comments.js badfile.txt
 // Running examples/plugins/work/remove_comments.js
 // run: examples/plugins/work/remove_comments.js Exited with error:
 // ENOENT, No such file or directory 'badfile.txt'
