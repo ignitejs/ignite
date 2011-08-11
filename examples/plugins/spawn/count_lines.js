@@ -31,7 +31,7 @@
 // This example finds all files in a specified directory, opens each 
 // and counts the number of lines of text contained. The example is 
 // contrived to use two state machines, `countLines` and `counter`, 
-// to illustrate how the [spawn][SPAWN] plug-in is used.
+// to illustrate how the [spawn][SPAWNPLUG] plug-in is used.
 //
 // The `counter` state machine is responsible for counting the number 
 // of lines in a single file. Its `ReadFile` state uses an asynchronous 
