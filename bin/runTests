@@ -32,6 +32,7 @@
 var ignite = require('../ignite'),
     child_process = require('child_process'),
     path = require('path'),
+    fs = require('fs'),
     util = require('util'),
     _ = require('underscore'),
     _s = require('underscore.string') ;
@@ -44,6 +45,11 @@ var expressoOptions = {
     customFds: [-1, -1, -1],
     setsid: false
   } ;
+
+console.log (path.existsSync('./tmp')) ;
+if (!path.existsSync('./tmp')) {
+  fs.mkdirSync('./tmp', "777") ;
+}
 
 var expressoPaths = ['node_modules/.bin/expresso', '/usr/local/bin/expresso', '/usr/bin/expresso'] ;
 
