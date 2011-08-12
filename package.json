@@ -31,7 +31,6 @@
             "url": "http://github.com/ignitejs/ignite"
         }
     ],
-    "main": "index.js",
     "bin": {
         "ignite": "./bin/ignite"
     },
