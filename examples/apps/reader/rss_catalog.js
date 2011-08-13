@@ -29,8 +29,8 @@
 
 var ignite = require('ignite'),
     path = require('path'),
-    _ = require('underscore'),
-    xml2js = require('xml2js');
+    xml2js = require('xml2js'),
+    _ = require('underscore');
 
 function rssRequest (fire, catalog, refresh) {
   this.startState = 'Request';
@@ -52,12 +52,12 @@ function rssRequest (fire, catalog, refresh) {
           if (!err) {
             fire.$machineEvent('data', {
               index: i,
-              data: body
+              xml: body
             });
           }
         },
         over: catalog,
-        par: 20
+        par: 5
       },
       actions: {
         '.done': 'Regulate'
@@ -80,9 +80,10 @@ var rssRequestFactory = new ignite.Factory(rssRequest);
 
 
 function rssCatalog (fire, catalogPath, refresh) {
-  var catalog, parser,
-      queue = [], feed,
-      dataSource;
+  var parser;
+  var catalog;
+  var dataSource;
+  var queue = [];
 
   this.startState = 'LoadCatalog';
   this.states = {
@@ -104,7 +105,7 @@ function rssCatalog (fire, catalogPath, refresh) {
         catalog = _.map(urlList, function(url) {
           return {
             url: [ { uri: url } ],
-            lastUpdate: new Date(0,0,0)
+            lastUpdate: new Date()
           };
         });
 
@@ -118,52 +119,53 @@ function rssCatalog (fire, catalogPath, refresh) {
     ManageQueue: {
       entry: function () {
         if (queue.length !== 0) {
-          return 'ParseXml';
+          return ['ParseXml', queue.shift()];
         }
       },
       actions: {
         'dataSource.data': function (data) {
           queue.push(data);
-          return 'ParseXml';
-        },
-        'api.stop': '@defer'
-      },
-      exit: function() {
-        var data = queue.shift();
-        feed = catalog[data.index];
-        feed.data = data.data;
+          return ['ParseXml', queue.shift()];
+        }
       }
     },
 
-    ParseXml: {
-      entry: function () {
-        parser.parseString(feed.data);
-      },
-      actions: {
-        '.end': function (xml) {
-          feed.channel = xml.channel;
-          feed.update = new Date(xml.channel.lastBuildDate);
-          return 'Broadcast';
+    ParseXml: function () {
+      var index;
+      return {
+        entry: function (data) {
+          index = data.index;
+          try {
+            parser.parseString(data.xml);
+          } catch (err) {
+            return 'ManageQueue';
+          }
         },
-        '.err': 'ManageQueue'
-      }
+        actions: {
+          '.end': function (xmlObj) {
+            return ['Broadcast', index, xmlObj];
+          },
+          '.error': function (err) {
+            'ManageQueue'
+          }
+        }
+      };
     },
 
     Broadcast: {
-      guard: function () {
-        if (feed.update <= feed.lastUpdate) {
-          return 'ManageQueue';
-        }
-      },
-      work: function () {
-        var newFeeds = _.select(feed.channel.item, function (item) {
-          item.pubDate = new Date(item.pubDate);
-          return item.pubDate > feed.lastUpdate;
-        });
-        feed.lastUpdate = feed.update;
+      work: function (index, xmlObj) {
+        var catalogItem = catalog[index];
+        var update = new Date(xmlObj.channel.lastBuildDate);
 
-        if (!_.isEmpty(newFeeds)) {
-          fire.$event('rssFeed', newFeeds);
+        if (update > catalogItem.lastUpdate) {
+          var newFeeds = _.select(xmlObj.channel.item, function (item) {
+            return (new Date(item.pubDate)) > catalogItem.lastUpdate;
+          });
+          catalogItem.lastUpdate = update;
+
+          if (!_.isEmpty(newFeeds)) {
+            fire.$event('rssFeed', newFeeds);
+          }
         }
         return 'done';
       },
@@ -197,9 +199,9 @@ rssCatalog.defaults = {
 };
 rssCatalog.runner = {
   on: {
-    'rssFeed': function (newFeeds) {
+    'rssFeed': function (newFeeds) {      
       _.each(newFeeds, function (feed) {
-        console.log('%s %s', feed.pubDate.toLocaleTimeString(), feed.title);
+        console.log('%s %s', feed.pubDate, feed.title);
       });
     }
   }
