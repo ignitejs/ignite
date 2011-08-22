@@ -46,7 +46,6 @@ var expressoOptions = {
     setsid: false
   } ;
 
-console.log (path.existsSync('./tmp')) ;
 if (!path.existsSync('./tmp')) {
   fs.mkdirSync('./tmp', "777") ;
 }
