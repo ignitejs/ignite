@@ -155,17 +155,21 @@ function rssCatalog (fire, catalogPath, refresh) {
     Broadcast: {
       work: function (index, xmlObj) {
         var catalogItem = catalog[index];
-        var update = new Date(xmlObj.channel.lastBuildDate);
+        try {
+          var update = new Date(xmlObj.channel.lastBuildDate);
 
-        if (update > catalogItem.lastUpdate) {
-          var newFeeds = _.select(xmlObj.channel.item, function (item) {
-            return (new Date(item.pubDate)) > catalogItem.lastUpdate;
-          });
-          catalogItem.lastUpdate = update;
+          if (update > catalogItem.lastUpdate) {
+            var newFeeds = _.select(xmlObj.channel.item, function (item) {
+              return (new Date(item.pubDate)) > catalogItem.lastUpdate;
+            });
+            catalogItem.lastUpdate = update;
 
-          if (!_.isEmpty(newFeeds)) {
-            fire.$event('rssFeed', newFeeds);
+            if (!_.isEmpty(newFeeds)) {
+              fire.$event('rssFeed', newFeeds);
+            }
           }
+        } catch (err) {
+          console.error(err);
         }
         return 'done';
       },

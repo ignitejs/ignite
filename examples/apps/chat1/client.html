@@ -2,7 +2,10 @@
 <html>
 
 <head>
-<title>chat1 app demo</title>
+<title>Chat App Demo</title>
+<meta name="description" content="Chat Client with RSS Feed reader client" />
+<meta name="keywords" content="Chat Demo,ignite,RSS Feed" />
+<meta name="author" content="Richard Miller-Smith,David Hammond" />
 <script src='http://code.jquery.com/jquery-latest.js'></script>
 <script src="/socket.io/socket.io.js"></script>
 <style type="text/css">
@@ -142,7 +145,7 @@ $(document).ready(function () {
 
 <body>
 <div id="main">
-  <h3 id="title">Chat1 App demo</h3>
+  <h3 id="title"><a href="http://ignitejs.com">ignite.js</a> Chat App Demo</h3>
   <h5 id='clientsConnected'></h5>
   <div id='signInBanner'>
   <table><tbody>
@@ -163,6 +166,9 @@ $(document).ready(function () {
 
   <div style='width:500px;'>
     <textarea id='chatInput' style='width:494px; height:50px;resize:none;'></textarea>
+  </div>
+  <div>
+    <span>See the <a href="http://ignitejs.com/examples/apps/chat.html">source code</a></span>
   </div>
 </div>
 </body>
