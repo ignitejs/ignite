@@ -49,6 +49,9 @@ function rssRequest (fire, catalog, refresh) {
           return feed.url;
         },
         iterator: function (i, err, response, body) {
+          if (err) {
+            console.log("err: ", err) ;
+          }
           if (!err) {
             fire.$machineEvent('data', {
               index: i,
@@ -101,11 +104,14 @@ function rssCatalog (fire, catalogPath, refresh) {
     
     StartSource: {
       entry: function (urlList) {
+        var fakeLastUpdate = new Date() ;
+        fakeLastUpdate.setMinutes(0, 0, 0) ;
+        
         urlList = JSON.parse(urlList);
         catalog = _.map(urlList, function(url) {
           return {
             url: [ { uri: url } ],
-            lastUpdate: new Date()
+            lastUpdate: fakeLastUpdate
           };
         });
 
@@ -138,6 +144,7 @@ function rssCatalog (fire, catalogPath, refresh) {
           try {
             parser.parseString(data.xml);
           } catch (err) {
+            console.log(err) ;
             return 'ManageQueue';
           }
         },
@@ -146,7 +153,8 @@ function rssCatalog (fire, catalogPath, refresh) {
             return ['Broadcast', index, xmlObj];
           },
           '.error': function (err) {
-            'ManageQueue'
+            console.log(err) ;
+            return 'ManageQueue' ;
           }
         }
       };

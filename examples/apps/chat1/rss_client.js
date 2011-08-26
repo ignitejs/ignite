@@ -49,7 +49,7 @@ function rssClient (fire, host, port) {
         },
         'socket.signedIn': 'StartFeed',
         'socket': function (msg) {
-          console.log(fire.$lastEvtName(), msg);
+//          console.log("Unhandled socket event:", fire.$lastEvtName(), msg);
         }
       }
     },

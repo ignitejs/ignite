@@ -50,39 +50,45 @@ var fireImports2 = { fs: require('fs'), process: process } ;
 module.exports = {
     'f1': function () {
       var jsm = new fakeSM('f1', 'readFile.done') ;
-      var fireFact = fireFactory({}, fireImports1) ;
+      jsm.library = fireImports1 ;
+      var fireFact = fireFactory({}) ;
 
       var fire = fireFact(jsm) ;
       fire.readFile('ignite.js') ;
     },
     'f2': function () {
       var jsm = new fakeSM('f2', 'fs.readFile.done') ;
-      var fireFact = fireFactory({}, fireImports2) ;
+      jsm.library = fireImports2 ;
+      var fireFact = fireFactory({}) ;
       var fire = fireFact(jsm) ;
       fire.fs.readFile('ignite.js') ;
     },
     'f3': function () {
       var jsm = new fakeSM('f3', 'fs.readFile.err') ;
-      var fireFact = fireFactory({}, fireImports2) ;
+      jsm.library = fireImports2 ;
+      var fireFact = fireFactory({}) ;
       var fire = fireFact(jsm) ;
       fire.fs.readFile('doesnotexist') ;
     },
     'fn1': function () {
       var jsm = new fakeSM('fn1', 'readFile.done') ;
-      var fireFact = fireFactory({}, fireImports1) ;
+      jsm.library = fireImports1 ;
+      var fireFact = fireFactory({}) ;
 
       var fire = fireFact(jsm) ;
       fire("readFile", 'ignite.js') ;
     },
     'fn2': function () {
       var jsm = new fakeSM('fn2', 'fs.readFile.done') ;
-      var fireFact = fireFactory({}, fireImports2) ;
+      jsm.library = fireImports2 ;
+      var fireFact = fireFactory({}) ;
       var fire = fireFact(jsm) ;
       fire("fs.readFile", 'ignite.js') ;
     },
     'fn3': function () {
       var jsm = new fakeSM('fn3', 'fs.readFile.err') ;
-      var fireFact = fireFactory({}, fireImports2) ;
+      jsm.library = fireImports2 ;
+      var fireFact = fireFactory({}) ;
       var fire = fireFact(jsm) ;
       fire("fs.readFile", 'doesnotexist') ;
     },
