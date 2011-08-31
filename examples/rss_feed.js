@@ -101,15 +101,19 @@ function rssFeed (fire, url, refresh) {
       }
     },
 
-    ParseXml: {
-      entry: function (response, body) {
-        parser.parseString(body);
-      },
-      actions: {
-        '.end': function (xml) {
-          return [ 'Broadcast', xml.channel ];
+    ParseXml: function () {
+      var sax;
+      return {
+        entry: function (response, body) {
+          sax = parser.parseString(body);
+        },
+        actions: {
+          '.end': function (xml) {
+            sax.close();
+            return [ 'Broadcast', xml.channel ];
+          }
         }
-      }
+      };
     },
 
     Broadcast: function () {
