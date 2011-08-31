@@ -49,9 +49,6 @@ function rssRequest (fire, catalog, refresh) {
           return feed.url;
         },
         iterator: function (i, err, response, body) {
-          if (err) {
-            console.log("err: ", err) ;
-          }
           if (!err) {
             fire.$machineEvent('data', {
               index: i,
@@ -104,14 +101,11 @@ function rssCatalog (fire, catalogPath, refresh) {
     
     StartSource: {
       entry: function (urlList) {
-        var fakeLastUpdate = new Date() ;
-        fakeLastUpdate.setMinutes(0, 0, 0) ;
-        
         urlList = JSON.parse(urlList);
         catalog = _.map(urlList, function(url) {
           return {
             url: [ { uri: url } ],
-            lastUpdate: fakeLastUpdate
+            lastUpdate: new Date()
           };
         });
 
@@ -137,24 +131,23 @@ function rssCatalog (fire, catalogPath, refresh) {
     },
 
     ParseXml: function () {
-      var index;
+      var index, sax;
       return {
         entry: function (data) {
           index = data.index;
           try {
-            parser.parseString(data.xml);
+            sax = parser.parseString(data.xml);
           } catch (err) {
-            console.log(err) ;
             return 'ManageQueue';
           }
         },
         actions: {
           '.end': function (xmlObj) {
+            sax.close();
             return ['Broadcast', index, xmlObj];
           },
           '.error': function (err) {
-            console.log(err) ;
-            return 'ManageQueue' ;
+            'ManageQueue'
           }
         }
       };
@@ -206,7 +199,7 @@ rssCatalog.defaults = {
   imports: { fs: require('fs') },
   args: [ 
     path.join(path.dirname(module.filename), 'rss_catalog.json'),
-    5000
+    20000
   ]
 };
 rssCatalog.runner = {
