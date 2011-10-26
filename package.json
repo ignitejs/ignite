@@ -1,7 +1,7 @@
 {
     "name": "ignite",
     "main": "./ignite.js",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "An easy-to-use async programming framework inspired by UML2 state machines.",
     "homepage": "http://ignitejs.com/",
     "keywords": [

@@ -68,7 +68,7 @@ function run (utils, donecb, jsmfile, jsmopts, jsmargs) {
   
   jsmfact = utils.createFactory(jsmfile, jsmopts, jsmargs) ;
   
-  jsmOptsToMerge = _.clone(jsmfact.desc.runner) ;
+  jsmOptsToMerge = _.clone(jsmfact.desc.runner || {}) ;
   
   if (jsmargs.length) {
     jsmOptsToMerge.args = jsmargs ;
