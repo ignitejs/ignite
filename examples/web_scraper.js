@@ -100,7 +100,8 @@ function webScraper (fire, baseUrl) {
     BoxOfficeSummary: {
       work: function (response, body) {
         var td, a;
-        $(body).find('#boxoffice tr').each(function (i, tr) {
+        $($(body).find('#main table')[0])
+                 .find('[class^="chart"]').each(function (i, tr) {
           if (i > 0) {
             td = $(tr).find('td');
             a  = $(tr).find('a');
