@@ -51,7 +51,8 @@
         "request": "",
         "socket.io": "",
         "socket.io-client": "",
-        "xml2js": ""
+        "xml2js": "",
+        "colors": ""
     },
     "directories": { 
         "doc": "./doc",
