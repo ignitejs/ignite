@@ -84,10 +84,10 @@ function sm3 (fire, fpath) {
   this.states = {
       "Exists": {
         "entry": function () {
-          fire.path.exists(fpath) ;
+          fire.fs.exists(fpath) ;
         },
         "actions": {
-          "path.exists": function (exists) {
+          "fs.exists": function (exists) {
             if (!exists) {
               return "@error" ;
             } else {
