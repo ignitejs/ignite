@@ -42,7 +42,7 @@ var test_FnParse_fire = function (fn, calls)
   for (i=0;i<calls.length;i++) {
     c = calls[i] ;
     fpc = fpcalls[i] ;
-    
+
     assert.ok(c.fn === fpc.fn) ;
     assert.ok(c.args.length === fpc.args.length) ;
     for (a=0;a<c.args.length;a++) {
@@ -89,7 +89,7 @@ module.exports = {
     'f7': function () {
       var fp = test_FnParse_fire(function (fire, path) {
           (function () {})(a0+a1, a2+a3, a4);
-      }, [{fn: "function(){}", args: ["a0+a1", "a2+a3", "a4"]}]) ;
+      }, [{fn: "(function(){})", args: ["a0+a1", "a2+a3", "a4"]}]) ;
     },
     'f8': function () {
       var fp = test_FnParse_fire(function (fire, path) {
