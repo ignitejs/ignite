@@ -46,14 +46,14 @@ var expressoOptions = {
     setsid: false
   } ;
 
-if (!path.existsSync('./tmp')) {
+if (!fs.existsSync('./tmp')) {
   fs.mkdirSync('./tmp', "777") ;
 }
 
 var expressoPaths = ['node_modules/.bin/expresso', '/usr/local/bin/expresso', '/usr/bin/expresso'] ;
 
 var expressoPath = _.detect(expressoPaths, function (epath) {
-  return path.existsSync(epath) ;
+  return fs.existsSync(epath) ;
 }) ;
 
 if (!expressoPath) {
