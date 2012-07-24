@@ -36,7 +36,7 @@ function timeout0 (fire, testTime) {
       "0": function () {
         var timerId ;
         return {
-          "timeout": 100,
+          "timeout": 200,
           "entry": function () {
             timerId = setInterval(fire.$cb("bad"), testTime) ;
           },
@@ -55,5 +55,5 @@ function timeout0 (fire, testTime) {
 
 t.regSM(timeout0);
 
-t.expressoAddRun("timeout0 run", [200]) ;
+t.expressoAddRun("timeout0 run", [500]) ;
 t.expressoAddRun("timeout0 run error", [50], 'error') ;
