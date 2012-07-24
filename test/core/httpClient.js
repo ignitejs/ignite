@@ -27,8 +27,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //]
 
-var igniteTest = require('../../ignite').test.igniteTest,
-    path = require('path'),
+var igniteTest = require('../../ignite').test.igniteTest,    
     util = require('util'),
     fs = require('fs'),
     url = require('url'),
@@ -43,7 +42,6 @@ function httpClient (fire, method, remoteurl, fpath) {
       "CreateReq": {
         "guard": function () {
           parsedurl = url.parse(remoteurl) ;
-//          util.log(util.inspect(parsedurl)) ;
           if (parsedurl.protocol != 'http:') {
             return "@error" ;
           }
@@ -59,7 +57,7 @@ function httpClient (fire, method, remoteurl, fpath) {
                   (parsedurl.hash?parsedurl.hash:""),
               method: method
           } ;
-//          util.log(util.inspect(options)) ;
+
           req = http.request(options) ;
           fire.$regEmitter("req", req, true) ;
           
@@ -98,7 +96,7 @@ function httpClient (fire, method, remoteurl, fpath) {
         "entry": function () {
           req.end() ;
         },
-        ignore: ["req.finish", "req.drain"],
+        ignore: ["req.socket","req.finish", "req.drain"],
         "actions": {
           "req.response": "Response"
         }
@@ -115,6 +113,7 @@ function httpClient (fire, method, remoteurl, fpath) {
           fire.$deregEmitter("req") ;
           fire.$regEmitter("res", res) ;
         },
+        ignore: ["res.newListener"],
         "actions": {
           "res.data": function (data) {
             outdata += data ;
@@ -132,5 +131,5 @@ t.regSM(httpClient);
 
 t.expressoAddRun("httpClient run", ["GET", "http://www.darwinvets.com/"]) ;
 t.expressoAddRun("httpClient run error", 
-    ["GET", "http://www.darwinvets.com/nothing"], 'error') ;
+  ["GET", "http://www.darwinvets.com/nothing"], 'error') ;
 
