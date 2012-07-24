@@ -49,7 +49,7 @@
 // that all spawned `counter` state machine have exited.
 //
 // Example Output:
-// $ ./bin/ignite examples/plugins/spawner/count_lines.js
+// $ ./bin/ignite examples/plugins/spawn/count_lines.js
 // Running examples/plugins/spawn/count_lines.js
 // index.js has 8 lines
 // .project has 23 lines
