@@ -35,7 +35,7 @@
 // Example Output:
 // $ ./bin/ignite examples/lnug/lnugExample2.js
 // Running examples/lnug/lnugExample2.js
-// Welcome. I'm searching for: '#lnug'
+// Welcome. I'm searching for: '%23LNUG'
 // Completed in:  0.192
 // 0: <span style="color: red;">lancestewart</span> -> <span style="color: blue;">[Everyone]</span> Img len: 900
 //    '<span style="color: green;">RT @ikershaw: Looking for Node.js developers to recruit at London node.js 
@@ -155,7 +155,7 @@ function lnugExample (fire, name) {
               var image = errors[index] ? "" : images[index] ;
               var fromTo = result.from_user.bold.red + " -> " ;
               fromTo += (result.to_user ? result.to_user : 
-                "<span style="color: blue;">[Everyone]</span>").blue ;
+                "<span style=\"color: blue;\">[Everyone]</span>").blue ;
               console.log("%d: %s Img len: %d\n   '%s'", 
                 index, fromTo, image.length, result.text.green) ;
             }) ;
@@ -181,7 +181,7 @@ lnugExample.defaults = {
   imports: { 
     request: require('request')
   },
-  args: [ '#lnug' ]
+  args: [ '%23LNUG' ]
 };
 
 module.exports = lnugExample;

@@ -27,8 +27,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //]
 
-var request = require('request'),
-    xml2js = require('xml2js');
+var request = require('request');
+var xml2js = require('xml2js');
+var _ = require('underscore');
 
 var base_url = 'http://weather.yahooapis.com/forecastrss',
     x2js = new xml2js.Parser(), api = {};
@@ -76,23 +77,25 @@ api.majorCities = [
  * @returns {YahooWeather} 
  */
 var YahooWeather = function(xml) {
+  if ('rss' in xml)
+    xml = xml.rss;
   this.xml = xml;
-  this.channel = xml.channel;
+  this.channel = _.isArray(xml.channel) ? xml.channel[0] : xml.channel;
 };
 YahooWeather.prototype.__defineGetter__('description', function() { 
   return this.channel.description; });
 YahooWeather.prototype.__defineGetter__('location', function() { 
-  return this.channel['yweather:location']['@']; });
+  return this.channel['yweather:location'][0]['$']; });
 YahooWeather.prototype.__defineGetter__('units', function() { 
-  return this.channel['yweather:units']['@']; });
+  return this.channel['yweather:units'][0]['$']; });
 YahooWeather.prototype.__defineGetter__('wind', function() { 
-  return this.channel['yweather:wind']['@']; });
+  return this.channel['yweather:wind'][0]['$']; });
 YahooWeather.prototype.__defineGetter__('atmosphere', function() { 
-  return this.channel['yweather:atmosphere']['@']; });
+  return this.channel['yweather:atmosphere'][0]['$']; });
 YahooWeather.prototype.__defineGetter__('astronomy', function() { 
-  return this.channel['yweather:astronomy']['@']; });
-YahooWeather.prototype.__defineGetter__('condition', function() { 
-  return this.channel.item['yweather:condition']['@']; });
+  return this.channel['yweather:astronomy'][0]['$']; });
+YahooWeather.prototype.__defineGetter__('condition', function() {
+  return this.channel.item[0]['yweather:condition'][0]['$']; });
 
 YahooWeather.prototype.toString = function() {
   return this.location.city + ', ' 

@@ -27,10 +27,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //]
 
-var ignite = require('ignite'),
-    path = require('path'),
-    xml2js = require('xml2js'),
-    _ = require('underscore');
+var ignite = require('ignite');
+var path = require('path');
+var xml2js = require('xml2js');
+var _ = require('underscore');
+
+function elementArrayHelper (elem) {
+  return _.isArray(elem) ? elem[0] : elem;
+}
 
 function rssRequest (fire, catalog, refresh) {
   this.startState = 'Request';
@@ -105,7 +109,7 @@ function rssCatalog (fire, catalogPath, refresh) {
         catalog = _.map(urlList, function(url) {
           return {
             url: [ { uri: url } ],
-            lastUpdate: new Date()
+            lastUpdate: new Date(new Date() - 1000*60*20)
           };
         });
 
@@ -144,10 +148,12 @@ function rssCatalog (fire, catalogPath, refresh) {
         actions: {
           '.end': function (xmlObj) {
             sax.close();
-            return ['Broadcast', index, xmlObj];
+            if ('rss' in xmlObj)
+              xmlObj = xmlObj.rss;
+            return ['Broadcast', index, elementArrayHelper(xmlObj.channel) ];
           },
           '.error': function (err) {
-            'ManageQueue'
+            return 'ManageQueue'
           }
         }
       };
@@ -156,12 +162,12 @@ function rssCatalog (fire, catalogPath, refresh) {
     Broadcast: {
       work: function (index, xmlObj) {
         var catalogItem = catalog[index];
-        try {
-          var update = new Date(xmlObj.channel.lastBuildDate);
-
+        try {          
+          var update = new Date(elementArrayHelper(xmlObj.lastBuildDate));
           if (update > catalogItem.lastUpdate) {
-            var newFeeds = _.select(xmlObj.channel.item, function (item) {
-              return (new Date(item.pubDate)) > catalogItem.lastUpdate;
+            var newFeeds = _.select(xmlObj.item, function (item) {
+              return (new Date(elementArrayHelper(item.pubDate))) 
+                > catalogItem.lastUpdate;
             });
             catalogItem.lastUpdate = update;
 

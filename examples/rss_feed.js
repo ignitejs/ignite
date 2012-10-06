@@ -110,7 +110,11 @@ function rssFeed (fire, url, refresh) {
         actions: {
           '.end': function (xml) {
             sax.close();
-            return [ 'Broadcast', xml.channel ];
+            // Do some XML structure checking
+            if ('rss' in xml)
+              xml = xml.rss;
+            return [ 'Broadcast', _.isArray(xml.channel) ? 
+                      xml.channel[0] : xml.channel ];
           }
         }
       };
@@ -119,7 +123,7 @@ function rssFeed (fire, url, refresh) {
     Broadcast: function () {
       var lastBuildDate = new Date(0, 0, 0);
       return {
-        guard: function (channel) {
+        guard: function (channel) {          
           channel.lastBuildDate = new Date(channel.lastBuildDate);
           if (channel.lastBuildDate <= lastBuildDate) {
             return 'Regulate';
