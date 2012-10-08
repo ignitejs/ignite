@@ -1,7 +1,7 @@
 {
     "name": "ignite",
     "main": "./ignite.js",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "An easy-to-use async programming framework inspired by UML2 state machines.",
     "homepage": "http://ignitejs.com/",
     "keywords": [
@@ -40,7 +40,7 @@
     "dependencies": {
         "node-proxy": "",
         "uglify-js": "",
-        "underscore": "1.3.x",
+        "underscore": "",
         "underscore.string": ""
     },
     "devDependencies": {
