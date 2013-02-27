@@ -39,7 +39,7 @@
     },
     "dependencies": {
         "node-proxy": "",
-        "uglify-js": "",
+        "uglify-js": "1.x",
         "underscore": "",
         "underscore.string": ""
     },
